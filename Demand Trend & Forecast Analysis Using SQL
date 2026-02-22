@@ -68,3 +68,55 @@ select * from (
     on o.product_id=p.product_id
     group by o.product_id) sp
 where top_list<=5;
+
+
+
+
+/* 🚀 PROJECT 2
+📦 Stage 2 – Trend Analysis (Important)
+This stage teaches real analyst thinking.
+You will learn:
+Running totals
+Demand changes
+Growth patterns
+These are used in real companies.
+
+🟢 TASK 1
+Running Demand Trend
+❓ Question
+Show:
+order_date
+daily demand
+cumulative demand */
+select order_date, sum(quantity) as daily_demand, 
+	sum(sum(quantity)) over (order by order_date) as cum_demand
+from orders
+group by order_date;
+
+-- 🟢 TASK 2 - Demand Growth
+/*❓ Question
+Show:
+order_date
+demand
+previous demand */
+select order_date, sum(quantity) as daily_demand, 
+	LAG(sum(quantity)) over (order by order_date) as pre_demand
+from orders
+group by order_date
+order by order_date;
+
+-- 🟢 TASK 3 (INTERMEDIATE)
+/*  Demand Change %
+❓ Question
+Show:
+order_date
+demand
+previous demand
+growth % */
+select order_date, daily_demand, pre_demand,
+	round((daily_demand-pre_demand)/pre_demand*100,2) as growth_in_percent from (
+	select order_date, sum(quantity) as daily_demand, 
+		LAG(sum(quantity)) over (order by order_date) as pre_demand
+	from orders
+	group by order_date
+	order by order_date ) sp ;
