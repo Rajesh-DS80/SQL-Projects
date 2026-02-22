@@ -110,3 +110,70 @@ join products p
 where datediff(s.delivery_date,s.ship_date)>5
 group by p.product_id, p.product_name
 order by delayed_orders;
+
+/* 📊 STAGE 1 — BASIC KPI ANALYSIS
+🟢 TASK 1 -Total Orders Per Month */
+select date_format(order_date,'%Y-%m') as monthly,
+	count(*) as tot_count
+from orders
+group by date_format(order_date,'%Y-%m')
+order by monthly;
+
+-- 🟢 TASK 2 -Top 5 Most Ordered Products
+select p.product_id, p.product_name, sum(o.quantity) as sales
+from orders o
+join products p
+on o.product_id=p.product_id
+group by p.product_id
+order by sales desc limit 5;
+
+-- 📦 STAGE 2 — DELIVERY PERFORMANCE
+-- 🟢 TASK 3 -Average Delivery Time (Days)
+select avg(datediff(delivery_date,ship_date)) as avg_del_days
+from shipments
+where datediff(delivery_date,ship_date) is not null;
+
+-- 🟢 TASK 4 --Delayed Deliveries (More than 5 days)
+select *, datediff(delivery_date,ship_date) as above_5_days
+from shipments
+where datediff(delivery_date,ship_date) > 5;
+
+-- 🏭 STAGE 3 — WAREHOUSE PERFORMANCE
+-- 🟢 TASK 5 -Orders Handled Per Warehouse
+select warehouse_id, count(*) as handle_orders
+from orders
+group by warehouse_id
+order by handle_orders desc;
+
+-- 🟢 TASK 6 -Warehouse with Longest Delivery Time
+select o.warehouse_id, avg(datediff(s.delivery_date,s.ship_date)) as avg_del_days
+from orders o
+join shipments s
+on o.order_id=s.order_id
+group by o.warehouse_id
+order by avg_del_days desc;
+
+-- 🚚 STAGE 4 — SUPPLIER ANALYSIS
+-- 🟢 TASK 7 -Supplier Lead Time Analysis
+select supplier_id, avg(lead_time_days) as lead_days from suppliers
+group by supplier_id
+order by lead_days desc;
+
+-- 📈 STAGE 5 — ADVANCED ANALYST TASK
+-- 🟢 TASK 8 - Monthly Demand + Running Total
+select monthly, demand_qty,
+	sum(demand_qty) over (order by monthly) as cum_demand from (
+		select date_format(order_date,'%Y-%m') as monthly,
+			sum(quantity) as demand_qty
+		from orders
+		group by date_format(order_date,'%Y-%m') )sc;
+
+-- 🎯 Which products are frequently delayed?
+select p.product_id, p.product_name, count(*) 
+from orders o
+join shipments s
+on o.order_id=s.order_id
+join products p
+on o.product_id=p.product_id
+where datediff(s.delivery_date,s.ship_date) >5
+group by o.product_id;
