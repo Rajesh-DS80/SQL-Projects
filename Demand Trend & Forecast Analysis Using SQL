@@ -1,0 +1,70 @@
+🎯 Objective Analyze:
+Demand trends
+Fast-moving products
+Slow-moving products
+Seasonal demand
+Future demand preparation
+
+-- 🟢 Stage 1 — Demand Analysis
+-- ✅ TASK 1 -❓ Monthly Demand per Product
+select product_id, date_format(order_date,'%Y-%m') as monthly,
+	sum(quantity) as sales
+from orders
+group by product_id, monthly
+order by product_id, monthly;
+
+-- 🟢 TASK 2 --❓ Most Demanded Products
+select product_id, sum(quantity) as sales
+from orders
+group by product_id
+order by sales  desc;
+
+-- 🟢 TASK 3 -❓ Least Demanded Products
+select product_id, sum(quantity) as sales
+from orders
+group by product_id
+order by sales;
+
+-- 🟢 Stage 2 — Trend Analysis
+-- ✅ TASK 4 -❓ Running Demand Trend
+select order_date, sum(quantity) as daily_demand,
+	sum(sum(quantity)) over (order by order_date) as cum_demand
+from orders
+group by order_date;
+
+-- 🟢 TASK 5 - ❓ Demand Growth
+select order_date, sum(quantity) as demand,
+	LAG(sum(quantity)) over (order by order_date) as pre_demand
+from orders
+group by order_date;
+
+-- 🟢 Stage 3 — Inventory Thinking
+-- ✅ TASK 6 - ❓ Fast Moving Products
+select product_id, avg(quantity) as avg_sales
+from orders
+group by product_id
+order by avg_sales desc;
+
+-- 🟢 TASK 7 -❓ Slow Moving Products
+select product_id, avg(quantity) as avg_sales
+from orders
+group by product_id
+order by avg_sales;
+
+-- 🟢 Stage 4 — Forecast Preparation
+-- ✅ TASK 8 - ❓ Monthly Trend Table
+select date_format(order_date,'%Y-%m') as monthly, sum(quantity) as monthly_sales
+from orders
+group by monthly;
+
+-- 🟢 Stage 5 — Advanced Analytics
+-- ✅ TASK 9 - ❓ Top 5 Growing Products
+
+select * from (
+	select o.product_id, sum(o.quantity) as qty, p.product_name,
+		dense_rank() over (order by sum(o.quantity) desc) as top_list
+	from orders o
+    join products p
+    on o.product_id=p.product_id
+    group by o.product_id) sp
+where top_list<=5;
