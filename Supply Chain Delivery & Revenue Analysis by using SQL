@@ -1,0 +1,83 @@
+🟢 Project Objective & Analyze:
+Product sales performance
+Delivery delays
+Warehouse efficiency
+Supplier performance
+This project shows real business skills.
+
+🟢 Tools Used
+SQL (MySQL)
+Excel (optional)
+
+🟢 Same previous databases used (Ref: Sales_mini_project)
+
+-- 🟢 Project Tasks
+-- ✅ TASK 1 — Revenue Analysis
+-- ❓ Question - Which products generate the highest revenue?
+select p.product_name, sum(o.quantity*p.unit_cost) as high_rev
+from orders o
+join products p
+on o.product_id=p.product_id
+group by p.product_name;
+
+-- 🟢 TASK 2 — Monthly Revenue Trend
+-- ❓ Question --Show monthly revenue.
+select date_format(order_date,'%Y-%m') as monthly,
+	sum(o.quantity*p.unit_cost) as revenue
+from orders o
+join products p
+on o.product_id=p.product_id
+group by date_format(order_date,'%Y-%m');
+
+-- 🟢 TASK 3 — Warehouse Performance
+-- ❓ Question -Which warehouse processes most orders?
+select w.city, count(*)
+from orders o
+join warehouses w
+on o.warehouse_id=w.warehouse_id
+group by w.city;
+
+-- 🟢 TASK 4 — Delivery Performance
+-- ❓ Question - Average delivery time.
+select avg(datediff(delivery_date,ship_date)) as avg_delivery_time
+from shipments
+where datediff(delivery_date,ship_date) is not null;
+
+-- 🟢 TASK 5 — Delay Analysis
+-- ❓ Question - Delayed shipments.
+select order_id, count(*) as delayed_shipments, datediff(delivery_date,ship_date) as delay_days from shipments
+where datediff(delivery_date,ship_date) > (select avg(datediff(delivery_date,ship_date)) from shipments)
+group by order_id, datediff(delivery_date,ship_date);
+
+select order_id, datediff(delivery_date,ship_date) from shipments;
+
+-- 🟢 TASK 6 — Supplier Analysis
+-- ❓ Question --Fastest suppliers.
+select supplier_id, avg(lead_time_days) as lead_time
+from suppliers
+group by supplier_id
+order by lead_time;
+
+-- 🟢 TASK 7 — Business Question (Important)
+-- ❓ Question - Which warehouse has most delays?
+select w.city, count(*) as delays
+from orders o
+join shipments s
+on o.order_id=s.order_id
+join warehouses w
+on o.warehouse_id=w.warehouse_id
+where datediff(delivery_date,ship_date) > 0
+group by w.city
+order by delays desc;
+
+-- 🟢 TASK 8 — Advanced (Resume Highlight)
+-- ❓ Question - Top 3 products by revenue
+select * from (
+	select p.product_name, sum(p.unit_cost*o.quantity) as sales, 
+		rank() over (order by sum(p.unit_cost*o.quantity) desc) as Top_rank
+	from orders o
+    join products p
+		on o.product_id=p.product_id
+	group by p.product_name
+    order by sum(p.unit_cost*o.quantity) desc) sp
+where Top_rank<=3;
