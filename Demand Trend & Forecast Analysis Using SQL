@@ -120,3 +120,47 @@ select order_date, daily_demand, pre_demand,
 	from orders
 	group by order_date
 	order by order_date ) sp ;
+
+
+/* 🟢 TASK 1
+Fast-Moving Products
+❓ Question - Find products with highest average order quantity. */
+select product_id, avg(quantity)
+from orders
+group by product_id
+order by avg(quantity) desc;
+
+-- 🟢 TASK 2- Slow-Moving Products
+-- ❓ Question - Find products with lowest average order quantity.
+select product_id,avg(quantity)
+from orders
+group by product_id
+order by avg(quantity);
+
+-- 🟢 TASK 3 - Total Quantity Per Product
+-- ❓ Question - Find total quantity sold per product.
+select product_id, sum(quantity) as tot_qty
+from orders
+group by product_id
+order by sum(quantity) desc;
+
+-- 🟢 TASK 4 (INTERMEDIATE) - Products Sold Less Than Average
+-- ❓ Question - Find products sold below average quantity.
+select product_id, sum(quantity)
+from orders
+group by product_id
+having sum(quantity) < (
+						select avg(total) 
+						from (
+							select sum(quantity) as total
+							from orders
+							group by product_id
+							) ss
+						);
+                        
+-- 🟢 TASK 5 (REAL ANALYST TASK) - Top 5 Fast-Moving Products
+-- ❓ Question - Find top 5 products by quantity.
+select product_id, sum(quantity)
+from orders
+group by product_id
+order by sum(quantity) desc limit 5;
