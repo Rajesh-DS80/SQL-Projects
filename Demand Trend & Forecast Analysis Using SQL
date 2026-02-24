@@ -164,3 +164,223 @@ select product_id, sum(quantity)
 from orders
 group by product_id
 order by sum(quantity) desc limit 5;
+
+
+-- 🚀 PROJECT 2 - 📊 Stage 4 – Forecast Preparation (Very Important)
+-- 🟢 TASK 1 - Monthly Demand Trend
+/* ❓ Question
+Show:
+Month
+Total Demand */
+select date_format(order_date,'%Y-%m') as monthly,
+	sum(quantity) as demand
+from orders
+group by monthly
+order by monthly;
+
+-- 🟢 TASK 2 - Demand per Product per Month
+/* ❓ Question
+Show:
+Product
+Month
+Demand */
+select product_id, date_format(order_date,'%Y-%m') as monthly, 
+	sum(quantity) as demand
+from orders
+group by product_id, monthly
+order by product_id, monthly;
+
+-- 🟢 TASK 3- Monthly Revenue Trend
+/*❓ Question
+Show:
+Month
+Revenue */
+select date_format(payment_date,'%Y-%m') as monthly, sum(paid) as revenue
+from payments
+group by monthly
+order by monthly;
+
+-- 🟢 TASK 4 (IMPORTANT) - Moving Average
+/* ❓ Question
+Show:
+Month
+Revenue
+3-month average */
+select monthly, revenue, 
+	avg(revenue) over (order by monthly rows between 2 preceding and current row) as moving_avg
+from (
+	select date_format(payment_date,'%Y-%m') as monthly, sum(paid) as revenue
+	from payments
+	group by monthly
+	) sm;
+
+-- 🟢 TASK 5 (REAL FORECAST TABLE) - Forecast Table
+/*❓ Question
+Create forecasting dataset.
+Show:
+Date
+Revenue */
+select payment_date, sum(paid) as revenue
+from payments
+group by payment_date;
+
+/* 🚀 STAGE 5 – Advanced Supply Chain Analytics
+You will learn:
+✔ Supplier analysis
+✔ Warehouse performance
+✔ Delivery performance
+✔ Product analysis */
+
+/* 🟢 TASK 1
+Top Selling Products
+❓ Question-Find top 10 products by quantity sold */
+select product_id, sum(quantity)
+from orders
+group by product_id
+order by sum(quantity) desc limit 3;
+
+/* 🟢 TASK 2 - Supplier Performance
+❓ Question - Find suppliers supplying most products */
+select s.supplier_id, count(p.product_id) as tot_prod
+from suppliers s
+join products p
+on s.product_id=p.product_id
+group by s.supplier_id
+order by tot_prod;
+
+-- 🟢 TASK 3 -Warehouse Utilization
+-- ❓ Question-Find warehouses storing most products
+select w.city, count(o.product_id) as tot_prod
+from warehouses w
+join orders o
+on w.warehouse_id=o.warehouse_id
+group by w.city;
+
+
+/* 🟢 TASK 4 - Delivery Performance
+❓ Question - Find average delivery time per product. */
+select o.product_id, avg(datediff(s.delivery_date,s.ship_date)) as avg_delivery_days
+from orders o
+join shipments s
+on o.order_id=s.order_id
+where datediff(s.delivery_date,s.ship_date) is not null
+group by o.product_id
+order by avg_delivery_days desc;
+
+-- 🟢 TASK 5 - Delayed Shipments
+-- ❓ Question - Find delayed shipments (>5 days)
+select * 
+from (
+		select o.product_id, count(*) as delay_orders, avg(datediff(s.delivery_date,s.ship_date)) as avg_delayed_days
+		from orders o
+		join shipments s
+		on o.order_id=s.order_id
+		where datediff(s.delivery_date,s.ship_date) is not null
+		group by o.product_id
+		) d
+where avg_delayed_days>5;
+
+-- 🟢 TASK 6 (IMPORTANT) - Best Supplier by Sales
+-- ❓ Question - Find suppliers generating highest sales.
+select s.supplier_id, sum(o.quantity) as high_sales
+from suppliers s
+join prod
+join orders o
+on s.product_id=o.product_id
+group by s.supplier_id
+order by high_sales desc;
+
+/* 🚀 FINAL CAPSTONE PROJECT
+📦 Supply Chain Performance Analytics
+🟢 Tables Used
+✔ products
+✔ orders
+✔ shipments
+✔ warehouses
+✔ suppliers */
+-- 🟢 STEP 1 — Total Orders
+-- ❓ Question - Find total number of orders.
+select count(*) as tot_orders
+from orders;
+
+-- 🟢 STEP 2 — Total Quantity Sold
+-- ❓ Question - Find total quantity sold.
+select sum(quantity) as tot_qty  from orders;
+
+-- 🟢 STEP 3 — Total Products
+-- ❓ Question - Find total products.
+select count(*) as tot_products from products;
+
+-- 🟢 STEP 4 — Top Products
+-- ❓ Question - Find top 5 products.
+select product_id, sum(quantity) as total
+from orders
+group by product_id
+order by sum(quantity) desc limit 5;
+
+-- 🟢 STEP 5 — Slow Products
+-- ❓ Question -- Find slow products.
+select product_id, sum(quantity) as total
+from orders
+group by product_id
+order by total limit 5;
+
+-- 🟢 STEP 6 — Delivery Time
+-- ❓ Question - Find average delivery time.
+select avg(datediff(delivery_date,ship_date)) as avg_delivery_time
+from shipments;
+
+-- 🟢 STEP 7 — Delayed Orders
+-- ❓ Question - Find delayed orders.
+select order_id, datediff(delivery_date, ship_date) as del_days
+from shipments
+where datediff(delivery_date, ship_date) is not null
+group by order_id, del_days
+order by del_days desc limit 1;
+
+select order_id, count(*) as delayed_orders from shipments
+where datediff(delivery_date,ship_date) > 5
+group by order_id;
+
+-- 🟢 STEP 8 — Supplier Analysis
+-- ❓ Question - Best supplier.
+select supplier_id, count(product_id) as tot_products
+from suppliers
+group by supplier_id
+order by tot_products desc;
+
+-- 🟢 STEP 9 — Warehouse Analysis
+-- ❓ Question - Most used warehouse.
+select w.city, sum(o.quantity) as tot_qty
+from warehouses w
+join orders o
+on w.warehouse_id=o.warehouse_id
+group by w.city;
+
+-- 🟢 STEP 10 — Monthly Orders
+-- ❓ Question - Monthly demand.
+select date_format(order_date,'%Y-%m') as monthly, sum(quantity) as tot_qty
+from orders
+group by monthly
+order by tot_qty desc;
+
+-- 🟢 STEP 11 — Delivery Performance
+-- ❓ Question - Delivery time by product.
+select o.product_id, round(avg(datediff(s.delivery_date,s.ship_date)),2) as delivery_time
+from orders o
+join shipments s
+on o.order_id=s.order_id
+where datediff(s.delivery_date,s.ship_date) is not null
+group by o.product_id
+order by delivery_time desc;
+
+
+-- 🟢 STEP 12 — Most Delayed Products
+-- ❓ Question - Most delayed products.
+select o.product_id, count(*) as delay_products, avg(datediff(delivery_date,ship_date)) as delay_days
+from orders o
+join shipments s
+on o.order_id=s.order_id
+where datediff(delivery_date,ship_date)>5
+group by product_id
+order by delay_products;
