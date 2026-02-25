@@ -384,3 +384,147 @@ on o.order_id=s.order_id
 where datediff(delivery_date,ship_date)>5
 group by product_id
 order by delay_products;
+
+
+-- Real Business Problems
+/* 🟢 Task 1 — Most Ordered Products
+❓ Question - Find products ordered the most number of times.
+Hint:
+COUNT(*)
+GROUP BY */
+select product_id, count(*) as tot_ordered_product
+from products
+group by product_id
+order by tot_ordered_product;
+
+-- 🟢 Task 2 — Average Order Size
+-- ❓ Question - Find average quantity per order.
+select avg(quantity) as avg_qty
+from orders;
+
+-- 🟢 Task 3 — Frequently Delayed Products
+-- ❓ Question Which products are delayed most?
+-- Delay = more than 5 days.
+select o.order_id, p.product_name, count(*), avg(datediff(s.delivery_date,s.ship_date)) as delay_days
+from orders o
+join shipments s
+on s.order_id=o.order_id
+join products p
+on o.product_id=p.product_id
+where datediff(s.delivery_date,s.ship_date) > 5
+group by o.order_id;
+
+-- 🟢 Task 4 — Fastest Delivered Products
+-- ❓ Question - Find products with fastest delivery.
+select o.order_id, p.product_name, count(*), avg(datediff(s.delivery_date,s.ship_date)) as fast_delivery
+from orders o
+join shipments s
+on s.order_id=o.order_id
+join products p
+on o.product_id=p.product_id
+where datediff(s.delivery_date,s.ship_date) < 5
+group by o.order_id
+order by fast_delivery;
+
+-- 🟢 Task 5 — Supplier With Most Sales
+-- ❓ Question - Find suppliers with highest sales.
+select s.supplier_id, sum(s.supplier_cost*o.quantity) as supplier_high_sales
+from suppliers s
+join orders o
+on s.product_id=o.product_id
+group by s.supplier_id
+order by supplier_high_sales desc;
+
+-- 🟢 Task 6 — Warehouse Workload
+-- ❓ Question - Find warehouses handling most orders.
+select w.city, count(*) as most_orders
+from warehouses w
+join orders o
+on w.warehouse_id=o.warehouse_id
+group by w.city;
+
+-- 🟢 Task 7 (INTERVIEW LEVEL)
+-- ❓ Question - Find top 3 products per supplier
+select * from (
+				select s.supplier_id, o.product_id, sum(o.quantity) as tot_qty,
+					row_number() over(partition by s.supplier_id order by sum(o.quantity) desc) as rank_no
+				from suppliers s
+				join products p
+				on s.product_id=p.product_id
+
+				join orders o
+				on p.product_id=o.product_id
+				group by s.supplier_id, o.product_id
+                ) t
+where rank_no <3;
+
+
+
+
+-- Interview SQL Questions
+-- 🟢 Question 1 — Second Highest Quantity
+-- ❓ Question - Find the second highest quantity ordered.
+select order_id, sum(quantity) as highest_qty
+ from orders
+ group by order_id
+ order by highest_qty desc limit 1 offset 1;
+ 
+ select distinct quantity
+ from orders
+ order by quantity desc limit 1 offset 1;
+ 
+ -- 🟢 Question 2 — Products Never Ordered
+-- ❓ Question - Find products with no orders.
+select p.product_id
+from products p
+left join orders o
+on p.product_id=o.product_id
+where p.product_id is null;
+
+-- 🟢 Question 3 — Orders Without Shipment
+-- ❓ Question - Find orders not shipped.
+select o.order_id
+from orders o
+left join shipments s
+on o.order_id=s.order_id
+where s.order_id is null;
+
+-- 🟢 Question 4 — Highest Ordered Product
+-- ❓ Question - Find product with highest total quantity.
+select product_id, sum(quantity) as qty
+from orders
+group by product_id
+order by qty desc;
+
+-- 🟢 Question 5 — Duplicate Orders
+-- ❓ Question - Find duplicate orders.
+select order_id, count(*) as tot_qty
+from orders
+group by order_id
+having count(*)>1;
+
+-- 🟢 Question 6 — Monthly Orders
+-- ❓ Question - Find monthly order count.
+select date_format(order_date,'%Y-%m') as monthly, count(*) as order_count
+from orders
+group by monthly;
+
+-- 🟢 Question 7 (IMPORTANT)
+-- ❓ Question - Find products who ordered more than average.
+select product_id, sum(quantity)
+    from orders
+	group by product_id
+    having sum(quantity)>
+		(
+			select avg(quantity) as avg_qty
+			from orders
+		 );
+         
+-- 🟢 Question 8 (ADVANCED)
+-- ❓ Question - Find top 3 products.
+select * from (
+		select product_id, sum(quantity) as tot_qty,
+			row_number() over (order by sum(quantity) desc) as top_rank
+		from orders
+        group by product_id) t
+        where top_rank<4;
